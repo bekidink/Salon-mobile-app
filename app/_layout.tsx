@@ -1,5 +1,4 @@
-// app/_layout.tsx
-import { Slot, Redirect } from 'expo-router';
+import { Slot, useRouter } from 'expo-router';
 import { useAuthStore } from '../store/auth';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -7,30 +6,30 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function RootLayout() {
-  const isAuthenticated = useAuthStore((state: { isAuthenticated: any; }) => state.isAuthenticated);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [isHydrated, setIsHydrated] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const hydrate = async () => {
-      // Wait for the store to rehydrate
-      // Since expo-secure-store is asynchronous, ensure that hydration is complete
-      // You might need to implement a mechanism to detect when hydration is done
+      // Wait for any async store setup if needed
       setIsHydrated(true);
     };
     hydrate();
   }, []);
 
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.replace('/onboarding'); // use replace to avoid back nav loop
+    }
+  }, [isHydrated, isAuthenticated]);
+
   if (!isHydrated) {
-    // Show a loading indicator while the store is hydrating
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
       </View>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <Redirect href="/details" />;
   }
 
   return (
